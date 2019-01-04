@@ -1,6 +1,7 @@
 package controllers;
 
 import com.google.zxing.WriterException;
+import com.google.zxing.common.BitMatrix;
 import com.google.zxing.common.CharacterSetECI;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import models.MainModel;
@@ -41,7 +42,7 @@ public class MainController implements PropertyChangeListener {
         mainModel.setQrSize((int) mainView.getSizeSpinner().getValue());
         mainModel.setUTF8(mainView.getUTF8CheckBox().isSelected());
         mainModel.setErrorCorrectionLevel(ErrorCorrectionLevel.L);
-        mainModel.setFileName("Test");
+//        mainModel.setFileName("Test");
     }
 
     private void setupViewEvents() {
@@ -93,19 +94,26 @@ public class MainController implements PropertyChangeListener {
                 contentsToGenerate = "You need to supply some text to go here!";
             }
 
-            generateQrCode(contentsToGenerate, mainModel.getErrorCorrectionLevel(), isUTF8);
+            // Get BitMatrix to convert to SCAD.
+            BitMatrix qrCode = generateQrCode(contentsToGenerate, mainModel.getErrorCorrectionLevel(), isUTF8);
 
             if (mainView.getGenerateSCADCheckBox().isSelected()){
-//                ScadUtils.scadFromFile();
+                try {
+                    ScadUtils.scadFromFile(new File(DefaultParameters.QR_PATH), DefaultParameters.SCAD_PATH, qrCode);
+                } catch (IOException err) {
+                    JOptionPane.showMessageDialog(mainView, err);
+                    err.printStackTrace();
+                }
             }
 
-
+            // TODO: Pass user-entered file path instead of DefaultParamters
             displayQrCode();
         });
 
     }
 
     private WifiStringBuilder getDataFromWifi() {
+        // TODO: Change to model calls rather than view calls
         String ssid = mainView.getSsidTextField().getText();
         char[] password = mainView.getPasswordPassField().getPassword();
         Boolean isWEP = mainView.getWEPCheckBox().isSelected();
@@ -132,12 +140,13 @@ public class MainController implements PropertyChangeListener {
         }
     }
 
-    private void generateQrCode(String content, ErrorCorrectionLevel errorCorrectionLevel, Boolean isUTF8) {
+    private BitMatrix generateQrCode(String content, ErrorCorrectionLevel errorCorrectionLevel, Boolean isUTF8) {
         try {
-            QRUtils.generateQRCode(content, new File(DefaultParameters.QR_PATH), DefaultParameters.IMAGE_TYPE, mainModel.getQrSize(), (isUTF8 ? CharacterSetECI.UTF8 : CharacterSetECI.ASCII), errorCorrectionLevel);
+            return QRUtils.generateQRCode(content, new File(DefaultParameters.QR_PATH), DefaultParameters.IMAGE_TYPE, mainModel.getQrSize(), (isUTF8 ? CharacterSetECI.UTF8 : CharacterSetECI.ASCII), errorCorrectionLevel);
         } catch (WriterException | IOException err) {
             JOptionPane.showMessageDialog(mainView, err);
             err.printStackTrace();
+            return null;
         }
     }
 

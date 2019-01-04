@@ -51,7 +51,7 @@ public class ScadUtils {
                 }
             }
 
-            // Union prevents any unforeseen intersections which may conflict with printing.
+            // Union prevents any unforeseen intersections which may conflict with printing. (and shaves ~6 seconds off render times)
             Union union = new Union(qrDataCubes);
 
             outputModelToFile.addModel(union);
